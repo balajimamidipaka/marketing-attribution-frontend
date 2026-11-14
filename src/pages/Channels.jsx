@@ -1,0 +1,12 @@
+import { useEffect,useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { Bar,BarChart,CartesianGrid,ResponsiveContainer,Tooltip,XAxis,YAxis } from 'recharts'
+import api from '../api/client';import {endpoints} from '../api/endpoints';import {asArray,money,number} from '../utils/format'
+import Panel from '../components/Panel';import {Loading,ErrorState,Empty} from '../components/States'
+export default function Channels(){
+ const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState('')
+ const load=async()=>{setLoading(true);setError('');try{setRows(asArray((await api.get(endpoints.channelPerformance)).data))}catch(e){setError(e.message)}finally{setLoading(false)}}
+ useEffect(()=>{load()},[])
+ return <><div className="page-intro"><div><h2>Channel performance</h2><p>Compare investment and conversion outcomes by standardized channel.</p></div><button className="button secondary" onClick={load}><RefreshCw size={15}/> Refresh</button></div>
+ {loading?<Loading/>:error?<ErrorState error={error} onRetry={load}/>:rows.length?<><Panel title="Attributed revenue by channel" subtitle="Values returned by the channel performance API"><div className="chart-wrap"><ResponsiveContainer width="100%" height={300}><BarChart data={rows} margin={{top:10,right:15,left:0,bottom:5}}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e9edf3"/><XAxis dataKey="STANDARD_CHANNEL" tick={{fontSize:11}} axisLine={false} tickLine={false}/><YAxis tick={{fontSize:11}} axisLine={false} tickLine={false}/><Tooltip formatter={v=>money(v)}/><Bar dataKey="ATTRIBUTED_REVENUE" name="Attributed revenue" fill="#426fe0" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div></Panel><Panel title="Channel detail" subtitle={`${rows.length} channels returned`}><div className="table-wrap"><table><thead><tr><th>Channel</th><th>Total spend</th><th>Conversions</th><th>Attributed revenue</th><th>ROAS</th><th>CPA</th></tr></thead><tbody>{rows.map((r,i)=><tr key={i}><td><b>{r.STANDARD_CHANNEL||r.standardChannel||'—'}</b></td><td>{money(r.TOTAL_SPEND??r.totalSpend)}</td><td>{number(r.ATTRIBUTED_CONVERSIONS??r.attributedConversions)}</td><td>{money(r.ATTRIBUTED_REVENUE??r.attributedRevenue)}</td><td>{Number(r.ROAS??r.roas??0).toFixed(2)}x</td><td>{money(r.CPA??r.cpa)}</td></tr>)}</tbody></table></div></Panel></>:<Empty/>}</>
+}

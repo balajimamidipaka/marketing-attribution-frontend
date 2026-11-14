@@ -1,0 +1,6 @@
+export default function Panel({ title, subtitle, action, children, className = '' }) {
+  return <section className={`panel ${className}`}>
+    <div className="panel-head"><div><h3>{title}</h3>{subtitle && <p>{subtitle}</p>}</div>{action}</div>
+    {children}
+  </section>
+}

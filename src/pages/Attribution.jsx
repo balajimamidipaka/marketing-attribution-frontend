@@ -1,0 +1,9 @@
+import {useEffect,useState} from 'react';import {RefreshCw} from 'lucide-react'
+import api from '../api/client';import {endpoints} from '../api/endpoints';import {asArray,money,number,titleCase} from '../utils/format';import Panel from '../components/Panel';import {Loading,ErrorState,Empty} from '../components/States'
+export default function Attribution(){
+ const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState('')
+ const load=async()=>{setLoading(true);setError('');try{setRows(asArray((await api.get(endpoints.attributionResults)).data))}catch(e){setError(e.message)}finally{setLoading(false)}}
+ useEffect(()=>{load()},[])
+ return <><div className="page-intro"><div><h2>Attribution model comparison</h2><p>Inspect conversion credit assigned by the attribution models.</p></div><button className="button secondary" onClick={load}><RefreshCw size={15}/> Refresh</button></div>
+ {loading?<Loading/>:error?<ErrorState error={error} onRetry={load}/>:rows.length?<Panel title="Attribution results" subtitle={`${rows.length} result rows returned by the backend`}><div className="table-wrap"><table><thead><tr><th>Model</th><th>Conversion</th><th>Order</th><th>Channel</th><th>Touchpoint</th><th>Credit</th><th>Attributed revenue</th></tr></thead><tbody>{rows.map((r,i)=><tr key={i}><td><span className="model-tag">{titleCase(r.MODEL_NAME||r.modelName)}</span></td><td>{r.CONVERSION_EVENT_ID||r.CONVERSION_EVENT||r.conversionEventId||'—'}</td><td>{r.ORDER_ID||r.orderId||'—'}</td><td>{r.STANDARD_CHANNEL||r.standardChannel||'—'}</td><td>{r.TOUCHPOINT_ID||r.touchpointId||'—'}</td><td>{Number(r.ATTRIBUTION_CREDIT??r.attributionCredit??0).toFixed(4)}</td><td>{money(r.ATTRIBUTED_REVENUE??r.attributedRevenue)}</td></tr>)}</tbody></table></div></Panel>:<Empty text="No attribution result rows returned. Check the configured endpoint path."/>}</>
+}

@@ -1,0 +1,4 @@
+import { AlertCircle, LoaderCircle, RefreshCw } from 'lucide-react'
+export function Loading({ label = 'Loading data…' }) { return <div className="state"><LoaderCircle className="spin" size={22}/><span>{label}</span></div> }
+export function ErrorState({ error, onRetry }) { return <div className="error-state"><AlertCircle size={20}/><div><b>Could not load this data</b><p>{error}</p>{onRetry && <button className="text-button" onClick={onRetry}><RefreshCw size={14}/> Try again</button>}</div></div> }
+export function Empty({ text = 'No records found.' }) { return <div className="empty-state">{text}</div> }

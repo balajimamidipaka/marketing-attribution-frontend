@@ -1,0 +1,9 @@
+import {useEffect,useState} from 'react';import {RefreshCw,ShieldAlert} from 'lucide-react'
+import api from '../api/client';import {endpoints} from '../api/endpoints';import {asArray,titleCase} from '../utils/format';import Panel from '../components/Panel';import {Loading,ErrorState,Empty} from '../components/States'
+export default function Alerts(){
+ const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState('')
+ const load=async()=>{setLoading(true);setError('');try{setRows(asArray((await api.get(endpoints.campaignAlerts)).data))}catch(e){setError(e.message)}finally{setLoading(false)}}
+ useEffect(()=>{load()},[])
+ return <><div className="page-intro"><div><h2>Campaign alerts</h2><p>Identify budget pacing and campaign conditions that need attention.</p></div><button className="button secondary" onClick={load}><RefreshCw size={15}/> Refresh</button></div>
+ {loading?<Loading/>:error?<ErrorState error={error} onRetry={load}/>:rows.length?<Panel title="Alert feed" subtitle={`${rows.length} alerts returned`}><div className="alert-list">{rows.map((r,i)=><div className="alert-row" key={i}><div className="alert-icon"><ShieldAlert size={18}/></div><div className="alert-copy"><b>{r.CAMPAIGN_NAME||r.campaignName||r.CAMPAIGN_ID||'Campaign alert'}</b><p>{r.ALERT_MESSAGE||r.MESSAGE||r.DESCRIPTION||r.alertMessage||'Review this campaign based on the returned alert details.'}</p><small>{titleCase(r.ALERT_TYPE||r.ALERT_STATUS||r.alertType||'Review')}</small></div></div>)}</div></Panel>:<Empty text="No campaign alerts returned. This can mean no alert conditions are currently present."/>}</>
+}

@@ -1,0 +1,13 @@
+import { useEffect,useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import api from '../api/client';import {endpoints} from '../api/endpoints';import {asArray,money,titleCase} from '../utils/format'
+import Panel from '../components/Panel';import {Loading,ErrorState,Empty} from '../components/States'
+export default function Budget(){
+ const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[campaign,setCampaign]=useState('')
+ const load=async()=>{setLoading(true);setError('');try{setRows(asArray((await api.get(endpoints.budgetPacing)).data))}catch(e){setError(e.message)}finally{setLoading(false)}}
+ useEffect(()=>{load()},[])
+ const filtered=rows.filter(r=>!campaign||(r.CAMPAIGN_ID||r.campaignId)===campaign)
+ return <><div className="page-intro"><div><h2>Campaign budget pacing</h2><p>See how actual spend compares with expected spend and campaign budget.</p></div><button className="button secondary" onClick={load}><RefreshCw size={15}/> Refresh</button></div>
+ <Panel title="Filter campaigns" subtitle="Select a campaign to narrow the table"><select className="filter-select" value={campaign} onChange={e=>setCampaign(e.target.value)}><option value="">All campaigns</option>{rows.map(r=><option key={r.CAMPAIGN_ID||r.campaignId} value={r.CAMPAIGN_ID||r.campaignId}>{r.CAMPAIGN_ID||r.campaignId} · {r.CAMPAIGN_NAME||r.campaignName}</option>)}</select></Panel>
+ {loading?<Loading/>:error?<ErrorState error={error} onRetry={load}/>:filtered.length?<Panel title="Pacing details" subtitle={`${filtered.length} campaign records`}><div className="table-wrap"><table><thead><tr><th>Campaign</th><th>Budget</th><th>Actual spend</th><th>Expected spend</th><th>Utilization</th><th>Pacing</th><th>Projected spend</th><th>Status</th></tr></thead><tbody>{filtered.map((r,i)=>{const status=r.PACING_STATUS||r.pacingStatus||'';return <tr key={i}><td><b>{r.CAMPAIGN_NAME||r.campaignName||r.CAMPAIGN_ID}</b><small className="sub-cell">{r.CAMPAIGN_ID||r.campaignId}</small></td><td>{money(r.CAMPAIGN_BUDGET??r.campaignBudget)}</td><td>{money(r.ACTUAL_SPEND??r.actualSpend)}</td><td>{money(r.EXPECTED_SPEND??r.expectedSpend)}</td><td>{Number(r.BUDGET_UTILIZATION??r.budgetUtilization??0).toFixed(2)}%</td><td><div className="pacing-cell"><b>{Number(r.PACING_PERCENTAGE??r.pacingPercentage??0).toFixed(2)}%</b><div className="progress"><i style={{width:`${Math.min(100,Number(r.PACING_PERCENTAGE??r.pacingPercentage??0))}%`}}/></div></div></td><td>{money(r.PROJECTED_SPEND??r.projectedSpend)}</td><td><span className={`status ${String(status).toLowerCase().replace(' ','-')}`}>{titleCase(status)}</span></td></tr>})}</tbody></table></div></Panel>:<Empty/>}</>
+}
